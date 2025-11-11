@@ -1,7 +1,7 @@
 
 //TODO: Replace Instruction Memory with Instruction Cache
 
-module IF #(
+module I_Fetch #(
     parameter INSTR_WIDTH = 32,    
     parameter INSTR_MEM_DEPTH = 5,
 

@@ -1,6 +1,6 @@
 //TODO: Need to deal with passing pipelined PC value for JAL instructions
 //TODO: Replace Data memory with interface to on-board DDR3 memory controller
-// TODO: PC Targte from Instruction execute phase is used before declaration
+//TODO: PC Targte from Instruction execute phase is used before declaration
 
 module data_path #(
     parameter DATA_WIDTH = 32,
@@ -9,8 +9,7 @@ module data_path #(
     input logic         i_clk,
     input logic         i_reset_n,
 
-    // Control Signals 
-
+    /* Control Unit Interface */
 
     // Hazard Signals 
 );
@@ -22,9 +21,6 @@ localparam  INSTR_MEM_DEPTH = 5;
 localparam  INSTR_MEM_ADDR_WIDTH = $clog2(INSTR_MEM_DEPTH);
 
 localparam REG_FILE_ADDR = $clog2(DATA_WIDTH);
-localparam OP_CODE_WIDTH = 7;
-localparam FUNCT3_WIDTH = 3;
-localparam FUNCT7_WIDTH = 7;
 
 /* ---------------- Instruction Fetch  ---------------- */
 
@@ -32,14 +28,14 @@ logic [INSTR_MEM_ADDR_WIDTH-1:0]    IF_ID_program_ctr;
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IF_ID_program_ctr_next;
 logic [DATA_WIDTH-1:0]              IF_ID_instruction;
 
-IF #(
+I_Fetch #(
     .INSTR_WIDTH(DATA_WIDTH),
     .INSTR_MEM_DEPTH(INSTR_MEM_DEPTH)
 ) instruction_fetch (
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
     .i_ctrl_PC_sel(),
-    .i_PC_target(IE_IM_PC_target),
+    .i_PC_target(IE_IF_PC_target),
     .o_IF_instr(IF_ID_instruction),
     .o_IF_program_cntr(IF_ID_program_ctr),
     .o_IF_program_cntr_next(IF_ID_program_ctr_next)
@@ -51,7 +47,7 @@ logic [DATA_WIDTH-1:0]      ID_IE_rd_data_1;
 logic [DATA_WIDTH-1:0]      ID_IE_rd_data_2;
 logic [DATA_WIDTH-1:0]      ID_IE_immediate;
 
-ID #(
+I_Decode #(
     .INSTR_WIDTH(DATA_WIDTH),
     .REG_FILE_DEPTH(DATA_WIDTH)
 ) instruction_decode (
@@ -95,7 +91,7 @@ end
 
 logic [DATA_WIDTH-1:0]              IE_IM_alu_result;
 logic [DATA_WIDTH-1:0]              IE_IM_data_write;
-logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_IM_PC_target;
+logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_IF_PC_target;
 
 I_Execute #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -112,7 +108,7 @@ I_Execute #(
     .i_ID_immediate(ID_IE_immediate),
     .o_IE_result(IE_IM_alu_result),
     .o_IE_data_write(IE_IM_data_write),
-    .o_IE_PC_target(IE_IM_PC_target)
+    .o_IE_PC_target(IE_IF_PC_target)
 );
 
 // --------------------------------------------------------
