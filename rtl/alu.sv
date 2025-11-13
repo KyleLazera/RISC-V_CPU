@@ -49,7 +49,7 @@ generate
         always_ff @(posedge i_clk)
             o_data <= temp_out;   
     end else begin
-        o_data = temp_out;
+        assign o_data = temp_out;
     end
 endgenerate
 

@@ -3,12 +3,12 @@
 
 module I_Fetch #(
     parameter INSTR_WIDTH = 32,    
-    parameter INSTR_MEM_DEPTH = 5,
+    parameter INSTR_MEM_DEPTH = 32,
 
     /* Non-Modifiable Parameters */
     parameter INSTR_MEM_ADDR_WIDTH = $clog2(INSTR_MEM_DEPTH),
-    parameter INSTR_MEM_WIDTH = INSTR_WIDTH,
-) (
+    parameter INSTR_MEM_WIDTH = INSTR_WIDTH
+)(
     input logic                             i_clk,
     input logic                             i_reset_n,
 
@@ -20,7 +20,7 @@ module I_Fetch #(
 
     // Pipelined Output Signals
     output logic [INSTR_MEM_WIDTH-1:0]      o_IF_instr,
-    output logic [INSTR_MEM_ADDR_WIDTH-1:0] o_IF_program_cntr
+    output logic [INSTR_MEM_ADDR_WIDTH-1:0] o_IF_program_cntr,
     output logic [INSTR_MEM_ADDR_WIDTH-1:0] o_IF_program_cntr_next    
 );
 
@@ -28,8 +28,11 @@ module I_Fetch #(
 
 logic [INSTR_WIDTH-1:0]  instr_mem [INSTR_MEM_DEPTH];
 
+// Sample Program - Used to test instruction support
 initial begin
-    //TODO: Add initial program to test & run
+    /* R-Type Tests */
+    instr_mem[0] = 32'b0000000_00000_00001_000_00010_0110011; // add reg[0] + reg[1] -> reg[2]
+
 end
 
 /* ---------------- Instruction Fetch  ---------------- */

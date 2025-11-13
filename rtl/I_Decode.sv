@@ -1,4 +1,4 @@
-module ID #(
+module I_Decode #(
     parameter INSTR_WIDTH = 32,
     parameter REG_FILE_DEPTH = 32,
 
@@ -10,24 +10,24 @@ module ID #(
     input logic                     i_reset_n,
 
     // Control Logic 
-    logic input [1:0]               i_ctrl_imm_sel,         // The location of teh immediate value varies depending on the instruction,
+    input logic [1:0]               i_ctrl_imm_sel,         // The location of teh immediate value varies depending on the instruction,
                                                             // this signal acts as a select to determine which bits to use.
     
-    logic input                     i_ctrl_WB_en,           // Enables writing data into teh register file - only used for various
+    input logic                     i_ctrl_WB_en,           // Enables writing data into teh register file - only used for various
                                                             // instructions.
-    logic output [6:0]              o_ctrl_opcode,
-    logic output [2:0]              o_ctrl_funct3,
-    logic output [6:0]              o_ctrl_funct7,
+    output logic [6:0]              o_ctrl_opcode,
+    output logic [2:0]              o_ctrl_funct3,
+    output logic [6:0]              o_ctrl_funct7,
 
     // Input Signals 
-    logic input [INSTR_WIDTH-1:0]   i_IF_instruction,       // Input Instruction gtom Instruction Fetch
-    logic input [DATA_WIDTH-1:0]    i_WB_result,            // Result/Data to wrtie back to the register file
-    logic input [REG_FILE_ADDR-1:0] i_WB_addr,              // Address for the destination register to write back to
+    input logic  [INSTR_WIDTH-1:0]   i_IF_instruction,       // Input Instruction gtom Instruction Fetch
+    input logic  [DATA_WIDTH-1:0]    i_WB_result,            // Result/Data to wrtie back to the register file
+    input logic  [REG_FILE_ADDR-1:0] i_WB_addr,              // Address for the destination register to write back to
 
     // Output Signals 
-    logic output [INSTR_WIDTH-1:0]  o_ID_data_1,            // Data output from register file port 1
-    logic output [INSTR_WIDTH-1:0]  o_ID_data_2,            // Data output from register file port 2
-    logic output [INSTR_WIDTH-1:0]  o_ID_immediate          // Sign extended immediate 
+    output logic  [INSTR_WIDTH-1:0]  o_ID_data_1,            // Data output from register file port 1
+    output logic  [INSTR_WIDTH-1:0]  o_ID_data_2,            // Data output from register file port 2
+    output logic  [INSTR_WIDTH-1:0]  o_ID_immediate          // Sign extended immediate 
 );
 
 /* --------------- Local Parameters --------------- */

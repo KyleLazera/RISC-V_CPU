@@ -26,6 +26,16 @@ module reg_file #(
 // Register File Declaration
 logic [REG_WIDTH-1:0]   reg_file [FILE_DEPTH];
 
+// Testing with initial Values 
+// TODO: Remove this after testing
+initial begin
+    reg_file[0] = 32'd0;
+    reg_file[1] = 32'd10;
+    for(int i = 2; i < FILE_DEPTH; i++) begin
+        reg_file[i] = 32'd0;
+    end
+end
+
 // -------------------------------------------------------------
 // The register file is accessed during two pipeline phases:
 // Instruction Decode (read) and Write Back (write).
@@ -38,8 +48,8 @@ logic [REG_WIDTH-1:0]   reg_file [FILE_DEPTH];
 // -------------------------------------------------------------
 always_ff @(negedge i_clk) begin
     if (!i_reset_n) begin
-        for(int i = 0; i < FILE_DEPTH; i++)
-            reg_file[i] <= {REG_WIDTH{1'b0}};
+        //for(int i = 0; i < FILE_DEPTH; i++)
+            //reg_file[i] <= {REG_WIDTH{1'b0}};
     end else begin
         // Register 0x0 should always contain the value 0
         if (i_wr_en & (i_wr_addr != {REG_WIDTH{1'b0}})) begin
