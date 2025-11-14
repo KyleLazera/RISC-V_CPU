@@ -72,7 +72,7 @@ I_Decode #(
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
     .i_ctrl_imm_sel(i_ctrl_imm_sel),
-    .i_ctrl_WB_en(i_ctrl_reg_file_wr_en),
+    .i_ctrl_WB_en(ctrl_IM_reg_wr_en), //i_ctrl_reg_file_wr_en
     .o_ctrl_opcode(instr_op_code),
     .o_ctrl_funct3(instr_funct3),
     .o_ctrl_funct7(instr_funct7),
@@ -108,6 +108,20 @@ always_ff @(posedge i_clk) begin
     end  
 end
 
+// -------------------------------------------------------
+// The Control signals are generated combinationally by the
+// control unit & some must be pipelined to stay in sync
+// with the instruction as it moves through the stages.
+// -------------------------------------------------------
+
+logic [1:0]     ctrl_ID_wb_result_sel = 2'b00;
+logic           ctrl_ID_reg_wr_en = 1'b0;
+
+always_ff@(posedge i_clk) begin
+    ctrl_ID_wb_result_sel <= i_ctrl_wb_result_sel;
+    ctrl_ID_reg_wr_en <= i_ctrl_reg_file_wr_en;
+end
+
 assign o_op_code = instr_op_code;
 assign o_funct3 = instr_funct3;
 assign o_funct7 = instr_funct7;
@@ -117,6 +131,7 @@ assign o_funct7 = instr_funct7;
 logic [DATA_WIDTH-1:0]              IE_IM_alu_result;
 logic [DATA_WIDTH-1:0]              IE_IM_data_write;
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_IF_PC_target;
+
 
 I_Execute #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -148,7 +163,6 @@ I_Execute #(
 logic [REG_FILE_ADDR-1:0]           IE_dst_reg = {REG_FILE_ADDR{1'b0}};
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_program_cntr_next = {INSTR_MEM_ADDR_WIDTH{1'b0}};
 
-
 always_ff @(posedge i_clk) begin
     if (!i_reset_n) begin
         IE_dst_reg <= {REG_FILE_ADDR{1'b0}};
@@ -157,6 +171,16 @@ always_ff @(posedge i_clk) begin
         IE_dst_reg <= ID_dst_reg;
         IE_program_cntr_next <= ID_program_cntr_next;
     end
+end
+
+// Control Unit Pipelining Logic
+
+logic [1:0]     ctrl_IE_wb_result_sel = 2'b00;
+logic           ctrl_IE_reg_wr_en = 1'b0;
+
+always_ff@(posedge i_clk) begin
+    ctrl_IE_wb_result_sel <= ctrl_ID_wb_result_sel;
+    ctrl_IE_reg_wr_en <= ctrl_ID_reg_wr_en;
 end
 
 /* ---------------- Memory Read/Write  ---------------- */
@@ -186,17 +210,30 @@ data_mem #(
 logic [DATA_WIDTH-1:0]              IM_read_data = {DATA_WIDTH{1'b0}};
 logic [REG_FILE_ADDR-1:0]           IM_dst_reg = {REG_FILE_ADDR{1'b0}};
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IM_program_cntr_next = {INSTR_MEM_ADDR_WIDTH{1'b0}};
+logic [DATA_WIDTH-1:0]              IM_WB_alu_result = {DATA_WIDTH{1'b0}};
 
 always_ff @(posedge i_clk) begin
     if (!i_reset_n) begin
         IM_read_data <= {DATA_WIDTH{1'b0}};
         IM_dst_reg <= {REG_FILE_ADDR{1'b0}};
         IM_program_cntr_next <= {INSTR_MEM_ADDR_WIDTH{1'b0}};
+        IM_WB_alu_result <= {DATA_WIDTH{1'b0}};
     end else begin
         IM_read_data <= IM_mem_rd_data;
         IM_dst_reg <= IE_dst_reg;
         IM_program_cntr_next <= IE_program_cntr_next;
+        IM_WB_alu_result <= IE_IM_alu_result;
     end
+end
+
+// Control Unit Pipelining Logic
+
+logic [1:0]     ctrl_IM_wb_result_sel = 2'b00;
+logic           ctrl_IM_reg_wr_en = 1'b0;
+
+always_ff@(posedge i_clk) begin
+    ctrl_IM_wb_result_sel <= ctrl_IE_wb_result_sel;
+    ctrl_IM_reg_wr_en <= ctrl_IE_reg_wr_en;
 end
 
 /* ---------------- Memory Write-Back  ---------------- */
@@ -204,11 +241,13 @@ end
 logic [DATA_WIDTH-1:0]    WB_result;
 logic [REG_FILE_ADDR-1:0] WB_dst_reg;
 
+assign WB_dst_reg = IM_dst_reg;
+
 always_comb begin
-    case(i_ctrl_wb_result_sel)
+    case(ctrl_IM_wb_result_sel)
         2'b00: WB_result = IM_read_data;            // Load from ALU output
-        2'b01: WB_result = IE_program_cntr_next;    // Data output from memory block
-        2'b10: WB_result = IE_IM_alu_result;           // Next PC for JAL instructions
+        2'b01: WB_result = IM_WB_alu_result;        // Data output from memory block
+        2'b10: WB_result = IE_program_cntr_next;    // Next PC for JAL instructions
         default: WB_result = {DATA_WIDTH{1'b0}};
     endcase
 end
