@@ -81,7 +81,7 @@ logic       src_sel;
 //--------------------------------------------------------
 
 // I-Type & S-Type instructions use immediate values
-assign src_sel = (MEM_STORE | MEM_LOAD | INT_IMMEDIATE | JALR);
+assign src_sel = (i_op_code == MEM_STORE | i_op_code == MEM_LOAD | i_op_code == INT_IMMEDIATE | i_op_code == JALR);
 
 /* ---------------- Write Back Control Logic  ---------------- */
 

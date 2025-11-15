@@ -116,10 +116,12 @@ end
 
 logic [1:0]     ctrl_ID_wb_result_sel = 2'b00;
 logic           ctrl_ID_reg_wr_en = 1'b0;
+logic           ctrl_ID_alu_src_sel = 1'b0;
 
 always_ff@(posedge i_clk) begin
     ctrl_ID_wb_result_sel <= i_ctrl_wb_result_sel;
     ctrl_ID_reg_wr_en <= i_ctrl_reg_file_wr_en;
+    ctrl_ID_alu_src_sel <= i_ctrl_alu_src_sel;
 end
 
 assign o_op_code = instr_op_code;
@@ -140,7 +142,7 @@ I_Execute #(
 ) instruction_execute (
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
-    .i_ctrl_alu_src_sel(i_ctrl_alu_src_sel),
+    .i_ctrl_alu_src_sel(ctrl_ID_alu_src_sel),
     .i_ctrl_alu_op_sel(i_ctrl_alu_op),
     .i_ID_read_data_1(ID_IE_rd_data_1),
     .i_ID_read_data_2(ID_IE_rd_data_2),
@@ -152,7 +154,7 @@ I_Execute #(
 );
 
 // --------------------------------------------------------
-// Similarly to the INstruction Decode stage, we also need 
+// Similarly to the Instruction Decode stage, we also need 
 // to pipeline the program counter next value & the 
 // destination register from the decode stage. This allows
 // the program counter and destination register to remain
