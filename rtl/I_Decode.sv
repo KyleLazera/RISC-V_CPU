@@ -10,7 +10,7 @@ module I_Decode #(
     input logic                     i_reset_n,
 
     // Control Logic 
-    input logic [1:0]               i_ctrl_imm_sel,         // The location of teh immediate value varies depending on the instruction,
+    input logic [1:0]               i_ctrl_imm_sel,         // The location of the immediate value varies depending on the instruction,
                                                             // this signal acts as a select to determine which bits to use.
     
     input logic                     i_ctrl_WB_en,           // Enables writing data into teh register file - only used for various

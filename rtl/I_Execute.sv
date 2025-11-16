@@ -23,7 +23,7 @@ module I_Execute #(
     input logic [DATA_WIDTH-1:0]        i_ID_read_data_2,
 
     input logic [REG_FILE_ADDR-1:0]     i_ID_program_ctr,
-    input logic [INSTR_MEM_ADDR-1:0]    i_ID_immediate,
+    input logic [DATA_WIDTH-1:0]        i_ID_immediate,
 
     // Output Signals
     output logic [DATA_WIDTH-1:0]       o_IE_result,            // Output of ALU (Can be either an address or data)

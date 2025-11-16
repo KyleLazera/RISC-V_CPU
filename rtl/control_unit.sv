@@ -85,15 +85,23 @@ logic [3:0]                 alu_op;
 assign src_sel = (i_op_code == MEM_STORE | i_op_code == MEM_LOAD | i_op_code == INT_IMMEDIATE | i_op_code == JALR);
 
 always_comb begin
-    case({i_funct7[5], i_funct3})
-        4'b0000: alu_op = 4'b0000;   // Add
-        4'b1000: alu_op = 4'b0001;   // Subtract
+    case(i_funct3)
+        4'b0000: begin
+            if (i_funct7[5] & i_op_code[5])
+                alu_op = 4'b0001;   // Subtract
+            else
+                alu_op = 4'b0000;   // Add
+        end
         4'b0001: alu_op = 4'b0010;   // Register shift-left
         4'b0010: alu_op = 4'b0011;   // Set less than
         4'b0011: alu_op = 4'b0100;   // Set less than (unsigned)
         4'b0100: alu_op = 4'b0101;   // XOR
-        4'b0101: alu_op = 4'b0110;   // Shift Right Logical
-        4'b1101: alu_op = 4'b0111;   // Shift Right Arithmetic
+        4'b0101: begin
+            if (i_funct7[5])
+                alu_op = 4'b0111;   // Shift Right Arithmetic
+            else
+                alu_op = 4'b0110;   // Shift Right Logical
+        end
         4'b0110: alu_op = 4'b1000;   // OR
         4'b0111: alu_op = 4'b1001;   // AND  
         default : alu_op = 4'b0000;  // Default = add    
@@ -114,7 +122,7 @@ logic [1:0] wb_result_sel;
 // to write to a desintation register.
 //--------------------------------------------------------
 
-assign reg_file_wr_en = (i_op_code == R_TYPE); //TODO: Complete this logic to include all instructions that write back to the register file
+assign reg_file_wr_en = (i_op_code == R_TYPE | i_op_code == INT_IMMEDIATE); //TODO: Complete this logic to include all instructions that write back to the register file
 assign wb_result_sel = (i_op_code == MEM_LOAD) ? 2'b00 :                // Load from memory
                        (i_op_code == JAL | i_op_code == JALR) ? 2'b10 : // Next PC for JAL/JALR
                        2'b01;                                           // Default to ALU result

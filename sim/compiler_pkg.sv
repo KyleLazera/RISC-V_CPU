@@ -96,6 +96,73 @@ function logic [31:0] sra(int rd, int rs1, int rs2);
     return encode_rtype(rd, rs1, rs2, F3_SRL_SRA, F7_SRA);
 endfunction : sra
 
+/* ------------------------- I-Type Instructions Functions --------------------------- */
+
+/* Shift Immediate Encoding Helper Function */
+function logic [31:0] encode_shift_imm (
+    input logic [6:0] funct7,
+    input logic [4:0] rd,
+    input logic [4:0] rs1,
+    input logic [4:0] imm,
+    input logic [2:0] funct3
+);
+    return {funct7, imm, rs1, funct3, rd, OP_I_TYPE};
+endfunction : encode_shift_imm
+
+// Shift Left Logical Immediate (SRLI)
+function logic [31:0] slli (int rd, int rs1, int imm);
+    return encode_shift_imm(7'b0000000, rd, rs1, imm, 3'b000);
+endfunction : slli
+
+// Shift Right Logical Immediate (SRLI)
+function logic [31:0] srli (int rd, int rs1, int imm);
+    return encode_shift_imm(7'b0000000, rd, rs1, imm, 3'b101);
+endfunction : srli
+
+// Shift Right Arithmetic Immediate (SRAI)
+function logic [31:0] srai (int rd, int rs1, int imm);
+    return encode_shift_imm(7'b0100000, rd, rs1, imm, 3'b101);
+endfunction : srai
+
+/* Integer Immediate Encoding Helper Function */
+function logic [31:0] encode_int_imm (
+    input logic [4:0] rd,
+    input logic [4:0] rs1,
+    input logic [11:0] imm,
+    input logic [2:0] funct3
+);
+    return {imm, rs1, funct3, rd, OP_I_TYPE};
+endfunction : encode_int_imm
+
+// ADDI: Add Immediate
+function logic [31:0] addi (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b000);
+endfunction : addi
+
+// SLTI: Set Less Than Immediate (signed)
+function logic [31:0] slti (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b010);
+endfunction : slti
+
+// SLTIU: Set Less Than Immediate (unsigned)
+function logic [31:0] sltiu (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b011);
+endfunction : sltiu
+
+// XORI: XOR Immediate
+function logic [31:0] xori (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b100);
+endfunction : xori
+
+// ORI: OR Immediate
+function logic [31:0] ori (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b110);
+endfunction : ori
+
+// ANDI: AND Immediate
+function logic [31:0] andi (int rd, int rs1, int imm);
+    return encode_int_imm(rd, rs1, imm, 3'b111);
+endfunction : andi
 
 
 endpackage : compiler_pkg

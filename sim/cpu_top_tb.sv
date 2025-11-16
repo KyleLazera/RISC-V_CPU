@@ -21,14 +21,15 @@ initial begin
 end
 
 initial begin
-    /* R-Type Tests */
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = add(2, 0, 1);          // add reg[0] + reg[1] -> reg[2] = 0 + 1 = 1
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = add(4, 1, 3);          // add reg[3] + reg[1] -> reg[4] = 1 + 3 = 4 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = sub(5, 5, 1);          // sub reg[5] - reg[1] -> reg[5] = 5 - 1 = 4 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = or_op(6, 7, 8);       // or reg[7] | reg[8] -> reg[6] = 7 | 8 = 15 (32'b1111)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = and_op(4, 4, 2);      // and reg[4] & reg[2] -> reg[4] = 2 & 4 = 0 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = xor_op(5, 3, 2);      // xor reg[3] ^ reg[2] -> reg[5] = 3 ^ 1 = 2
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = sll(2, 6, 2);         // sll reg[6] << reg[2] -> reg[2] = 15 << 1 = 30 (multiply by 2)
+    /* Instruction Tests */
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = sub(5, 3, 10);         // reg[3] - reg[10] -> reg[5] (3 - 10 = -7)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = addi(1, 0, 15);        // reg[0] + 15 -> reg[1] (0 + 15 = 15)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = addi(2, 30, -5);       // reg[30] - 5 -> reg[2]  (30 - 5 = 25)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = slti(3, 5, -10);      // reg[5] < -10 -> reg[3]   (Should be False)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = slti(4, 5, -4);       // reg[5] < -4 -> reg[4]   (Should be True)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = sltiu(6, 8, 10);      // reg[8] < 10 -> reg[6] (Should be True)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = xori(7, 15, 15);      // reg[15] ^ 15 -> reg[7] (15 ^ 15 = 0)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[28] = andi(8, 8, 9);        // reg[8] & 9 -> reg[8] (8 & 9 = 8)
 end
 
 /* Reset Generation */
