@@ -6,100 +6,96 @@ package compiler_pkg;
 // their binary representation.
 //-------------------------------------------------------
 
-// Sample Instruction Memory
-logic [31:0] instruction_memory [31:0];
+/* Op codes for RISC-V Instructions */
+localparam logic [6:0] OP_R_TYPE = 7'b0110011;
+localparam logic [6:0] OP_I_TYPE = 7'b0010011;
+localparam logic [6:0] OP_LOAD   = 7'b0000011;
+localparam logic [6:0] OP_STORE  = 7'b0100011;
+localparam logic [6:0] OP_BRANCH = 7'b1100011;
+localparam logic [6:0] OP_JAL    = 7'b1101111;
+localparam logic [6:0] OP_JALR   = 7'b1100111;
+localparam logic [6:0] OP_LUI    = 7'b0110111;
 
-/* Enum that contains op-codes for RISC-V instruction types */
-typedef enum logic [6:0] {
-    OP_R_TYPE   = 7'b0110011,
-    OP_I_TYPE   = 7'b0010011,
-    OP_LOAD     = 7'b0000011,
-    OP_STORE    = 7'b0100011,
-    OP_BRANCH   = 7'b1100011,
-    OP_JAL      = 7'b1101111,
-    OP_JALR     = 7'b1100111,
-    OP_LUI      = 7'b0110111
-} op_code_e;
+/* Funct3 values */
+localparam F3_ADD_SUB = 3'b000;
+localparam F3_SLL     = 3'b001;
+localparam F3_SLT     = 3'b010;
+localparam F3_SLTU    = 3'b011;
+localparam F3_XOR     = 3'b100;
+localparam F3_SRL_SRA = 3'b101;
+localparam F3_OR      = 3'b110;
+localparam F3_AND     = 3'b111;
+
+/* Funct7 values */
+localparam F7_ADD = 7'b0000000;
+localparam F7_SUB = 7'b0100000;
+localparam F7_SRL = 7'b0000000;
+localparam F7_SRA = 7'b0100000;
+
+
+/* ------------------------- R-Type Instructions Functions --------------------------- */
+
+function logic [31:0] encode_rtype(
+    input logic [4:0] rd,
+    input logic [4:0] rs1,
+    input logic [4:0] rs2,
+    input logic [2:0] funct3,
+    input logic [6:0] funct7
+);
+    return {funct7, rs2, rs1, funct3, rd, OP_R_TYPE};
+endfunction
 
 // Add the contents of src_1 and src_2 registers and store the result in dst_reg
-function logic [31:0] add(int dst_reg, int src1, int src2);
-    logic [6:0] op_code, funct7;
-    logic [2:0] funct3;
-    logic [4:0] rs1, rs2, rd;
-
-    op_code = OP_R_TYPE;
-    funct3 = 3'b000;
-    funct7 = 7'b0000000;
-    rs1 = src1;
-    rs2 = src2;
-    rd = dst_reg;
-
-    return {funct7, rs2, rs1, funct3, rd, op_code};
-endfunction : add
+function logic [31:0] add(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_ADD_SUB, F7_ADD);
+endfunction
 
 // Subtract the contents of register 2 from the contents of reg 1 and store result
 // in the dst_reg
-function logic [31:0] sub(int dst_reg, int src1, int src2);
-    logic [6:0] op_code, funct7;
-    logic [2:0] funct3;
-    logic [4:0] rs1, rs2, rd;
-
-    op_code = OP_R_TYPE;
-    funct3 = 3'b000;
-    funct7 = 7'b0100000;
-    rs1 = src1;
-    rs2 = src2;
-    rd = dst_reg;
-
-    return {funct7, rs2, rs1, funct3, rd, op_code};
-endfunction : sub
+function logic [31:0] sub(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_ADD_SUB, F7_SUB);
+endfunction
 
 // Bitwise AND of contents of src1 and src2 registers, store in dst_reg
-function logic [31:0] and_op(int dst_reg, int src1, int src2);
-    logic [6:0] op_code, funct7;
-    logic [2:0] funct3;
-    logic [4:0] rs1, rs2, rd;
-
-    op_code = OP_R_TYPE;
-    funct3 = 3'b111;
-    funct7 = 7'b0000000;
-    rs1 = src1;
-    rs2 = src2;
-    rd = dst_reg;
-
-    return {funct7, rs2, rs1, funct3, rd, op_code};
-endfunction : and_op
+function logic [31:0] and_op(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_AND, F7_ADD);
+endfunction
 
 // Bitwise OR of contents of src1 and src2 registers, store in dst_reg
-function logic [31:0] or_op(int dst_reg, int src1, int src2);
-    logic [6:0] op_code, funct7;
-    logic [2:0] funct3;
-    logic [4:0] rs1, rs2, rd;
-
-    op_code = OP_R_TYPE;
-    funct3 = 3'b110;
-    funct7 = 7'b0000000;
-    rs1 = src1;
-    rs2 = src2;
-    rd = dst_reg;
-
-    return {funct7, rs2, rs1, funct3, rd, op_code};
-endfunction : or_op
+function logic [31:0] or_op(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_OR, F7_ADD);
+endfunction
 
 // Bitwise XOR of contents of src1 and src2 registers, store in dst_reg
-function logic [31:0] xor_op(int dst_reg, int src1, int src2);
-    logic [6:0] op_code, funct7;
-    logic [2:0] funct3;
-    logic [4:0] rs1, rs2, rd;
+function logic [31:0] xor_op(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_XOR, F7_ADD);
+endfunction
 
-    op_code = OP_R_TYPE;
-    funct3 = 3'b100;
-    funct7 = 7'b0000000;
-    rs1 = src1;
-    rs2 = src2;
-    rd = dst_reg;
+// Shift Left Logical - Shift contents of src1 left by amount in src2, store shifted value in dst_reg
+function logic [31:32] sll(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_SLL, F7_ADD);
+endfunction
 
-    return {funct7, rs2, rs1, funct3, rd, op_code};
-endfunction : xor_op
+// Set Less Than (signed)
+function logic [31:0] slt(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_SLT, F7_ADD);
+endfunction : slt
+
+// Set Less Than Unsigned
+function logic [31:0] sltu(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_SLTU, F7_ADD);
+endfunction : sltu
+
+// Shift Right Logical
+function logic [31:0] srl(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_SRL_SRA, F7_SRL);
+endfunction : srl
+
+// Shift Right Arithmetic
+function logic [31:0] sra(int rd, int rs1, int rs2);
+    return encode_rtype(rd, rs1, rs2, F3_SRL_SRA, F7_SRA);
+endfunction : sra
+
+
 
 endpackage : compiler_pkg

@@ -22,11 +22,13 @@ end
 
 initial begin
     /* R-Type Tests */
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = add(2, 0, 1); // add reg[0] + reg[1] -> reg[2] = 0 + 1 = 1
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = add(4, 1, 3); // add reg[3] + reg[1] -> reg[4] = 1 + 3 = 4 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = sub(5, 5, 1); // sub reg[5] - reg[1] -> reg[5] = 5 - 1 = 4 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = or_op(6, 7, 8); // or reg[7] | reg[8] -> reg[6] = 7 | 8 = 15 (32'b1111)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = and_op(4, 4, 2); // and reg[4] & reg[2] -> reg[4] = 2 & 4 = 0 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = add(2, 0, 1);          // add reg[0] + reg[1] -> reg[2] = 0 + 1 = 1
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = add(4, 1, 3);          // add reg[3] + reg[1] -> reg[4] = 1 + 3 = 4 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = sub(5, 5, 1);          // sub reg[5] - reg[1] -> reg[5] = 5 - 1 = 4 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = or_op(6, 7, 8);       // or reg[7] | reg[8] -> reg[6] = 7 | 8 = 15 (32'b1111)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = and_op(4, 4, 2);      // and reg[4] & reg[2] -> reg[4] = 2 & 4 = 0 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = xor_op(5, 3, 2);      // xor reg[3] ^ reg[2] -> reg[5] = 3 ^ 1 = 2
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = sll(2, 6, 2);         // sll reg[6] << reg[2] -> reg[2] = 15 << 1 = 30 (multiply by 2)
 end
 
 /* Reset Generation */
