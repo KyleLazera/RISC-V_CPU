@@ -20,7 +20,7 @@ module control_unit #(
     // Output Signals
     output logic [1:0]              o_imm_sel,              // Indicates where within the instruction the immediate bits are located
     output logic                    o_alu_src_sel,          // Selects between register file output or immediate value for ALU operand 2
-    output logic [FUNCT3_WIDTH-1:0] o_alu_op,               // ALU operation select signal
+    output logic [3:0]              o_alu_op,               // ALU operation select signal
     output logic                    o_reg_file_wr_en,       // Enables writing back to the register file
     output logic [1:0]              o_wb_result_sel         // Selects the source of the data to write back to the register file
 );
@@ -70,7 +70,8 @@ end
 
 /* ---------------- ALU Decoding Logic  ---------------- */
 
-logic       src_sel;
+logic                       src_sel;
+logic [3:0]                 alu_op;
 
 //-------------------------------------------------------
 // The ALU has 2 main decoding signals:
@@ -82,6 +83,22 @@ logic       src_sel;
 
 // I-Type & S-Type instructions use immediate values
 assign src_sel = (i_op_code == MEM_STORE | i_op_code == MEM_LOAD | i_op_code == INT_IMMEDIATE | i_op_code == JALR);
+
+always_comb begin
+    case({i_funct7[5], i_funct3})
+        4'b0000: alu_op = 4'b0000;   // Add
+        4'b1000: alu_op = 4'b0001;   // Subtract
+        4'b0001: alu_op = 4'b0010;   // Register shift-left
+        4'b0010: alu_op = 4'b0011;   // Set less than
+        4'b0011: alu_op = 4'b0100;   // Set less than (unsigned)
+        4'b0100: alu_op = 4'b0101;   // XOR
+        4'b0101: alu_op = 4'b0110;   // Shift Right Logical
+        4'b1101: alu_op = 4'b0111;   // Shift Right Arithmetic
+        4'b0110: alu_op = 4'b1000;   // OR
+        4'b0111: alu_op = 4'b1001;   // AND  
+        default : alu_op = 4'b0000;  // Default = add    
+    endcase
+end
 
 /* ---------------- Write Back Control Logic  ---------------- */
 
@@ -103,13 +120,11 @@ assign wb_result_sel = (i_op_code == MEM_LOAD) ? 2'b00 :                // Load 
                        2'b01;                                           // Default to ALU result
 
 
-/* ---------------- RWrite Back Result Control Logic  ---------------- */
-
 /* ---------------- Output Control Logic  ---------------- */
 
 assign o_imm_sel = imm_sel;
 assign o_alu_src_sel = src_sel;
-assign o_alu_op = i_funct3;    // TODO: Need to expand this to fully decode ALU operations
+assign o_alu_op = alu_op;   
 assign o_reg_file_wr_en = reg_file_wr_en;
 assign o_wb_result_sel = wb_result_sel; 
 

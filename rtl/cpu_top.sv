@@ -19,7 +19,7 @@ logic [FUNCT7_WIDTH-1:0]  funct7;
 
 logic [1:0]               imm_sel;
 logic                     alu_src_sel;
-logic [FUNCT3_WIDTH-1:0]  alu_op;
+logic [3:0]               alu_op;
 logic                     reg_file_wr_en;
 logic [1:0]               wb_result_sel;
 

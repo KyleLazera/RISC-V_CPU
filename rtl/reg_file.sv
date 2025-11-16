@@ -29,10 +29,8 @@ logic [REG_WIDTH-1:0]   reg_file [FILE_DEPTH];
 // Testing with initial Values 
 // TODO: Remove this after testing
 initial begin
-    reg_file[0] = 32'd0;
-    reg_file[1] = 32'd10;
-    for(int i = 2; i < FILE_DEPTH; i++) begin
-        reg_file[i] = 32'd0;
+    for(int i = 0; i < FILE_DEPTH; i++) begin
+        reg_file[i] = i;
     end
 end
 

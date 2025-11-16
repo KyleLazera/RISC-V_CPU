@@ -15,7 +15,7 @@ module I_Execute #(
                                                                 //  1. Register value from reg file
                                                                 //  2. Immediate value for jumps/stores/loads etc.
                                                                 // i_ctrl_alu_src_sel acts as a select signal
-    input logic                         i_ctrl_alu_op_sel,      // Select which operation the ALU should perform
+    input logic [3:0]                   i_ctrl_alu_op_sel,      // Select which operation the ALU should perform
     output logic                        o_ctrl_zero_flag,
 
     // Input Signals 
@@ -53,7 +53,7 @@ assign alu_operand_2 = (i_ctrl_alu_src_sel) ? i_ID_immediate : i_ID_read_data_2;
 /* --------------- ALU Instantiation --------------- */
 alu #(
     .DATA_WIDTH(DATA_WIDTH),
-    .SEL_WIDTH(3),
+    .SEL_WIDTH(4),
     .REG_OUTPUT(0)
 ) alu_execute (
     .i_clk(i_clk),

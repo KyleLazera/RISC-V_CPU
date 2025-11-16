@@ -21,7 +21,7 @@ module data_path #(
 
     input logic [1:0]                i_ctrl_imm_sel,            // Immediate select from control unit
     input logic                      i_ctrl_alu_src_sel,        // Selects teh second operand for the ALU (immediate vs register output)
-    input logic [FUNCT3_WIDTH-1:0]   i_ctrl_alu_op,             // ALU operation select from control unit
+    input logic [3:0]                i_ctrl_alu_op,             // ALU operation select from control unit
     input logic                      i_ctrl_reg_file_wr_en,
     input logic [1:0]                i_ctrl_wb_result_sel       // Determine the Source for the Write Back 
 
@@ -72,7 +72,7 @@ I_Decode #(
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
     .i_ctrl_imm_sel(i_ctrl_imm_sel),
-    .i_ctrl_WB_en(ctrl_IM_reg_wr_en), //i_ctrl_reg_file_wr_en
+    .i_ctrl_WB_en(ctrl_IM_reg_wr_en), 
     .o_ctrl_opcode(instr_op_code),
     .o_ctrl_funct3(instr_funct3),
     .o_ctrl_funct7(instr_funct7),
@@ -84,11 +84,15 @@ I_Decode #(
     .o_ID_immediate(ID_IE_immediate)
 );
 
+assign o_op_code = instr_op_code;
+assign o_funct3 = instr_funct3;
+assign o_funct7 = instr_funct7;
+
 // --------------------------------------------------------
 // In addition to decoding the instruction & sign extending
 // the immediate value, we also need to pipeline the program
-// counter value & next value from the IF stage. This allows 
-// the program counter value to stay in sync with the 
+// counter value & next (program counter) value from the IF stage. 
+// This allows the program counter value to stay in sync with the 
 // instruction it corresponds to.
 // --------------------------------------------------------
 
@@ -110,23 +114,22 @@ end
 
 // -------------------------------------------------------
 // The Control signals are generated combinationally by the
-// control unit & some must be pipelined to stay in sync
-// with the instruction as it moves through the stages.
+// control unit during the decoding stage. The signals must 
+// then be pipelined to remain in sync with the instruction
+// as it moves through the pipeline stages.
 // -------------------------------------------------------
 
 logic [1:0]     ctrl_ID_wb_result_sel = 2'b00;
 logic           ctrl_ID_reg_wr_en = 1'b0;
 logic           ctrl_ID_alu_src_sel = 1'b0;
+logic [3:0]     ctrl_ID_alu_op = 4'b0;
 
 always_ff@(posedge i_clk) begin
     ctrl_ID_wb_result_sel <= i_ctrl_wb_result_sel;
     ctrl_ID_reg_wr_en <= i_ctrl_reg_file_wr_en;
     ctrl_ID_alu_src_sel <= i_ctrl_alu_src_sel;
+    ctrl_ID_alu_op <= i_ctrl_alu_op;
 end
-
-assign o_op_code = instr_op_code;
-assign o_funct3 = instr_funct3;
-assign o_funct7 = instr_funct7;
 
 /* ---------------- Instruction Execute  ---------------- */
 
@@ -143,7 +146,7 @@ I_Execute #(
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
     .i_ctrl_alu_src_sel(ctrl_ID_alu_src_sel),
-    .i_ctrl_alu_op_sel(i_ctrl_alu_op),
+    .i_ctrl_alu_op_sel(ctrl_ID_alu_op),
     .i_ID_read_data_1(ID_IE_rd_data_1),
     .i_ID_read_data_2(ID_IE_rd_data_2),
     .i_ID_program_ctr(ID_program_cntr),
@@ -175,7 +178,7 @@ always_ff @(posedge i_clk) begin
     end
 end
 
-// Control Unit Pipelining Logic
+// Control Unit Signal Pipelining Logic
 
 logic [1:0]     ctrl_IE_wb_result_sel = 2'b00;
 logic           ctrl_IE_reg_wr_en = 1'b0;

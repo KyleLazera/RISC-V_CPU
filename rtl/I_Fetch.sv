@@ -28,13 +28,6 @@ module I_Fetch #(
 
 logic [INSTR_WIDTH-1:0]  instr_mem [INSTR_MEM_DEPTH];
 
-// Sample Program - Used to test instruction support
-initial begin
-    /* R-Type Tests */
-    instr_mem[0] = 32'b0000000_00000_00001_000_00010_0110011; // add reg[0] + reg[1] -> reg[2]
-    instr_mem[4] = 32'b0000000_00011_00001_000_00100_0110011; // add reg[3] + reg[1] -> reg[4]
-end
-
 /* ---------------- Instruction Fetch  ---------------- */
 
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    program_cntr = {INSTR_MEM_ADDR_WIDTH{1'b0}};
