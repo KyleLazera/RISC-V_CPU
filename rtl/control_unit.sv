@@ -22,7 +22,9 @@ module control_unit #(
     output logic                    o_alu_src_sel,          // Selects between register file output or immediate value for ALU operand 2
     output logic [3:0]              o_alu_op,               // ALU operation select signal
     output logic                    o_reg_file_wr_en,       // Enables writing back to the register file
-    output logic [1:0]              o_wb_result_sel         // Selects the source of the data to write back to the register file
+    output logic [1:0]              o_wb_result_sel,        // Selects the source of the data to write back to the register file
+    output logic                    o_pc_src_sel,           // Selects the source for the program counter (next sequential vs branch/jump target)
+    output logic                    o_mem_wr_en             // Enables writing to data memory
 );
 
 /* ---------------- Local Parameters  ---------------- */
@@ -85,28 +87,45 @@ logic [3:0]                 alu_op;
 assign src_sel = (i_op_code == MEM_STORE | i_op_code == MEM_LOAD | i_op_code == INT_IMMEDIATE | i_op_code == JALR);
 
 always_comb begin
-    case(i_funct3)
-        4'b0000: begin
-            if (i_funct7[5] & i_op_code[5])
-                alu_op = 4'b0001;   // Subtract
-            else
-                alu_op = 4'b0000;   // Add
-        end
-        4'b0001: alu_op = 4'b0010;   // Register shift-left
-        4'b0010: alu_op = 4'b0011;   // Set less than
-        4'b0011: alu_op = 4'b0100;   // Set less than (unsigned)
-        4'b0100: alu_op = 4'b0101;   // XOR
-        4'b0101: begin
-            if (i_funct7[5])
-                alu_op = 4'b0111;   // Shift Right Arithmetic
-            else
-                alu_op = 4'b0110;   // Shift Right Logical
-        end
-        4'b0110: alu_op = 4'b1000;   // OR
-        4'b0111: alu_op = 4'b1001;   // AND  
-        default : alu_op = 4'b0000;  // Default = add    
-    endcase
+    if (i_op_code == MEM_LOAD | i_op_code == MEM_STORE)
+        alu_op = 4'b0000;   // Default to addition
+    else begin
+        case(i_funct3)
+            4'b0000: begin
+                if (i_funct7[5] & i_op_code[5])
+                    alu_op = 4'b0001;   // Subtract
+                else
+                    alu_op = 4'b0000;   // Add
+            end
+            4'b0001: alu_op = 4'b0010;   // Register shift-left
+            4'b0010: alu_op = 4'b0011;   // Set less than
+            4'b0011: alu_op = 4'b0100;   // Set less than (unsigned)
+            4'b0100: alu_op = 4'b0101;   // XOR
+            4'b0101: begin
+                if (i_funct7[5])
+                    alu_op = 4'b0111;   // Shift Right Arithmetic
+                else
+                    alu_op = 4'b0110;   // Shift Right Logical
+            end
+            4'b0110: alu_op = 4'b1000;   // OR
+            4'b0111: alu_op = 4'b1001;   // AND  
+            default : alu_op = 4'b0000;  // Default = add    
+        endcase
+    end
 end
+
+/* ---------------- Program Counter Select Logic  ---------------- */
+
+logic   pc_src_sel;
+
+//This logic is used for branching to a different program counter value
+assign pc_src_sel = (i_op_code == JALR);
+
+/* ---------------- Memory Write Logic  ---------------- */
+
+logic  mem_wr_en;
+
+assign mem_wr_en = (i_op_code == MEM_STORE);
 
 /* ---------------- Write Back Control Logic  ---------------- */
 
@@ -122,10 +141,10 @@ logic [1:0] wb_result_sel;
 // to write to a desintation register.
 //--------------------------------------------------------
 
-assign reg_file_wr_en = (i_op_code == R_TYPE | i_op_code == INT_IMMEDIATE); //TODO: Complete this logic to include all instructions that write back to the register file
+assign reg_file_wr_en = (i_op_code == R_TYPE | i_op_code == INT_IMMEDIATE | i_op_code == MEM_LOAD); //TODO: Complete this logic to include all instructions that write back to the register file
 assign wb_result_sel = (i_op_code == MEM_LOAD) ? 2'b00 :                // Load from memory
                        (i_op_code == JAL | i_op_code == JALR) ? 2'b10 : // Next PC for JAL/JALR
-                       2'b01;                                           // Default to ALU result
+                    2'b01;                                           // Default to ALU result
 
 
 /* ---------------- Output Control Logic  ---------------- */
@@ -135,5 +154,7 @@ assign o_alu_src_sel = src_sel;
 assign o_alu_op = alu_op;   
 assign o_reg_file_wr_en = reg_file_wr_en;
 assign o_wb_result_sel = wb_result_sel; 
+assign o_pc_src_sel = pc_src_sel;
+assign o_mem_wr_en = mem_wr_en;
 
 endmodule

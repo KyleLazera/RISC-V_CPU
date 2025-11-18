@@ -3,7 +3,7 @@
 
 module I_Fetch #(
     parameter INSTR_WIDTH = 32,    
-    parameter INSTR_MEM_DEPTH = 32,
+    parameter INSTR_MEM_DEPTH = 2**32,
 
     /* Non-Modifiable Parameters */
     parameter INSTR_MEM_ADDR_WIDTH = $clog2(INSTR_MEM_DEPTH),

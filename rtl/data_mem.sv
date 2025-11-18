@@ -12,7 +12,7 @@
 
 module data_mem #(
     parameter DATA_WIDTH = 32,
-    parameter MEM_DEPTH = 32,
+    parameter MEM_DEPTH = 2**32,
 
     /* Do Not Modify */
     parameter ADDR_WIDTH = $clog2(MEM_DEPTH)

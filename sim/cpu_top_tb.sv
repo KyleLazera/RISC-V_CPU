@@ -22,14 +22,11 @@ end
 
 initial begin
     /* Instruction Tests */
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = sub(5, 3, 10);         // reg[3] - reg[10] -> reg[5] (3 - 10 = -7)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = addi(1, 0, 15);        // reg[0] + 15 -> reg[1] (0 + 15 = 15)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = addi(2, 30, -5);       // reg[30] - 5 -> reg[2]  (30 - 5 = 25)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = slti(3, 5, -10);      // reg[5] < -10 -> reg[3]   (Should be False)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = slti(4, 5, -4);       // reg[5] < -4 -> reg[4]   (Should be True)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = sltiu(6, 8, 10);      // reg[8] < 10 -> reg[6] (Should be True)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = xori(7, 15, 15);      // reg[15] ^ 15 -> reg[7] (15 ^ 15 = 0)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[28] = andi(8, 8, 9);        // reg[8] & 9 -> reg[8] (8 & 9 = 8)
+
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = sw(20, 30, -10);       // SW x20, -10(reg[30]) -> Store 20 in address (30-10 = 20)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = sw(10, 20, -4);        // SW x10, -4(reg[20])  -> Store 10 in address (20-4 = 16)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = sw(8, 12, 0);          // SW x8, 0(reg[12])    -> Store 8 in address (12 + 0 = 12)
+
 end
 
 /* Reset Generation */

@@ -164,5 +164,57 @@ function logic [31:0] andi (int rd, int rs1, int imm);
     return encode_int_imm(rd, rs1, imm, 3'b111);
 endfunction : andi
 
+/* Integer Immediate Encoding Helper Function */
+function logic [31:0] encode_load (
+    input logic [4:0] rd,
+    input logic [4:0] rs1,
+    input logic [11:0] imm,
+    input logic [2:0] funct3
+);
+    return {imm, rs1, funct3, rd, OP_LOAD};
+endfunction : encode_load
+
+function logic [31:0] lw (int rd, int rs1, int imm);
+    return encode_load(rd, rs1, imm, 3'b010);
+endfunction : lw
+
+function logic [31:0] jalr (int rd, int rs1, int imm);
+    logic [4:0] rd_reg;
+    logic [4:0] rs1_reg;
+    logic [11:0] imm_reg;
+
+    rd_reg = rd;
+    rs1_reg = rs1;
+    imm_reg = imm;
+
+    return {imm_reg, rs1_reg, 3'b000, rd_reg, OP_JALR};
+endfunction : jalr
+
+/* ------------------------- S-Type Instructions Functions --------------------------- */
+
+function logic [31:0] encode_stype(
+    int rs1, 
+    int rs2, 
+    int imm
+);
+
+    logic [6:0] imm_high;
+    logic [4:0] imm_low;
+    logic [4:0] rs1_reg;
+    logic [4:0] rs2_reg;
+
+    imm_high = imm[11:5];
+    imm_low = imm[4:0];
+    rs1_reg = rs1;
+    rs2_reg = rs2;
+
+    return {imm_high, rs2_reg, rs1_reg, 3'b010, imm_low, OP_STORE};
+
+endfunction : encode_stype
+
+/* SW (Store Word) Instruction */
+function logic [31:0] sw(int rs1, int rs2, int imm);
+    return encode_stype(rs1, rs2, imm);
+endfunction : sw
 
 endpackage : compiler_pkg

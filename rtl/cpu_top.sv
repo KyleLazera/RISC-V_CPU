@@ -22,6 +22,8 @@ logic                     alu_src_sel;
 logic [3:0]               alu_op;
 logic                     reg_file_wr_en;
 logic [1:0]               wb_result_sel;
+logic                     pc_src_sel;
+logic                     mem_wr_en;
 
 control_unit #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -43,7 +45,9 @@ control_unit #(
     .o_alu_src_sel(alu_src_sel),          // Selects between register file output or immediate value for ALU operand 2
     .o_alu_op(alu_op),               // ALU operation select signal
     .o_reg_file_wr_en(reg_file_wr_en),       // Enables writing back to the register file
-    .o_wb_result_sel(wb_result_sel)  
+    .o_wb_result_sel(wb_result_sel),
+    .o_pc_src_sel(pc_src_sel),
+    .o_mem_wr_en(mem_wr_en)
 );
 
 /* ---------------- Data Path Instantiation  ---------------- */
@@ -68,7 +72,9 @@ data_path #(
     .i_ctrl_alu_src_sel(alu_src_sel),        // Selects teh second operand for the ALU (immediate vs register output)
     .i_ctrl_alu_op(alu_op),             // ALU operation select from control unit
     .i_ctrl_reg_file_wr_en(reg_file_wr_en),
-    .i_ctrl_wb_result_sel(wb_result_sel)      
+    .i_ctrl_wb_result_sel(wb_result_sel),
+    .i_ctrl_PC_sel(pc_src_sel),
+    .i_mem_wr_en(mem_wr_en)   
 );
 
 

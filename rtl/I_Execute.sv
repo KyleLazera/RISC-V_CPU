@@ -28,7 +28,8 @@ module I_Execute #(
     // Output Signals
     output logic [DATA_WIDTH-1:0]       o_IE_result,            // Output of ALU (Can be either an address or data)
     output logic [DATA_WIDTH-1:0]       o_IE_data_write,        // Data that would be used in the memory write stage
-    output logic [REG_FILE_ADDR-1:0]    o_IE_PC_target          // PC target (for jump style instruction)
+    output logic [REG_FILE_ADDR-1:0]    o_IE_PC_target,         // PC target (for jump style instruction)
+    output logic                        o_IE_zero_flag          // Zero flag from ALU
 );
 
 logic [DATA_WIDTH-1:0]      alu_output;
@@ -60,7 +61,8 @@ alu #(
     .i_src_a(alu_operand_1),
     .i_src_b(alu_operand_2),
     .i_sel(i_ctrl_alu_op_sel),
-    .o_data(alu_output)
+    .o_data(alu_output),
+    .o_zero(o_IE_zero_flag)
 );
 
 /* --------------- Pipelined Logic --------------- */
