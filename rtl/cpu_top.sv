@@ -22,7 +22,8 @@ logic                     alu_src_sel;
 logic [3:0]               alu_op;
 logic                     reg_file_wr_en;
 logic [1:0]               wb_result_sel;
-logic                     pc_src_sel;
+logic                     jump_instr;
+logic                     branch_instr;
 logic                     mem_wr_en;
 
 control_unit #(
@@ -46,7 +47,8 @@ control_unit #(
     .o_alu_op(alu_op),               // ALU operation select signal
     .o_reg_file_wr_en(reg_file_wr_en),       // Enables writing back to the register file
     .o_wb_result_sel(wb_result_sel),
-    .o_pc_src_sel(pc_src_sel),
+    .o_jalr(jump_instr),
+    .o_branch(branch_instr),
     .o_mem_wr_en(mem_wr_en)
 );
 
@@ -73,7 +75,8 @@ data_path #(
     .i_ctrl_alu_op(alu_op),             // ALU operation select from control unit
     .i_ctrl_reg_file_wr_en(reg_file_wr_en),
     .i_ctrl_wb_result_sel(wb_result_sel),
-    .i_ctrl_PC_sel(pc_src_sel),
+    .i_ctrl_jump(jump_instr),
+    .i_ctrl_branch(branch_instr),
     .i_mem_wr_en(mem_wr_en)   
 );
 

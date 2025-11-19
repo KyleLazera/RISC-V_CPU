@@ -89,9 +89,9 @@ logic [DATA_WIDTH-1:0]  se_immediate;
 // --------------------------------------------------
 always_comb begin
     case(i_ctrl_imm_sel)
-        2'b00: se_immediate = {{20{immediate[24]}}, immediate[24:13]};                      // I-Type Instruction {instr[31:20]}
-        2'b01: se_immediate = {{20{immediate[24]}}, immediate[24:18], immediate[4:0]};      // S/B Type Instruction {instr[31:25], instr[11:7]}
-        // TODO: Complete Extend Unit 2'b10: se_immediate = {{20{immediate[24]}}, }; 
+        2'b00: se_immediate = {{20{immediate[24]}}, immediate[24:13]};                                                        // I-Type Instruction {instr[31:20]}
+        2'b01: se_immediate = {{20{immediate[24]}}, immediate[24:18], immediate[4:0]};                                        // S Type Instruction {instr[31:25], instr[11:7]}
+        2'b10: se_immediate = {{19{immediate[24]}}, immediate[24], immediate[0], immediate[23:18], immediate[4:1], 1'b0};     // B-Type Instruction {instr[31], instr[7], instr[30:25], instr[11:8], 1'b0}
     endcase
 end
 

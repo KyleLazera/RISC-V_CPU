@@ -24,7 +24,8 @@ module data_path #(
     input logic [3:0]                i_ctrl_alu_op,             // ALU operation select from control unit
     input logic                      i_ctrl_reg_file_wr_en,
     input logic [1:0]                i_ctrl_wb_result_sel,      // Determine the Source for the Write Back 
-    input logic                      i_ctrl_PC_sel,
+    input logic                      i_ctrl_jump,
+    input logic                      i_ctrl_branch,
     input logic                      i_mem_wr_en  
 
     // Hazard Signals 
@@ -50,7 +51,7 @@ I_Fetch #(
 ) instruction_fetch (
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
-    .i_ctrl_PC_sel(ctrl_ID_PC_sel),                    
+    .i_ctrl_PC_sel(ctrl_IE_PC_sel),                    
     .i_PC_target(IE_IF_PC_target),
     .o_IF_instr(IF_ID_instruction),
     .o_IF_program_cntr(IF_ID_program_ctr),
@@ -125,7 +126,8 @@ logic [1:0]     ctrl_ID_wb_result_sel = 2'b00;
 logic           ctrl_ID_reg_wr_en = 1'b0;
 logic           ctrl_ID_alu_src_sel = 1'b0;
 logic [3:0]     ctrl_ID_alu_op = 4'b0;
-logic           ctrl_ID_PC_sel = 1'b0;
+logic           ctrl_ID_jump = 1'b0;
+logic           ctrl_ID_branch = 1'b0;
 logic           ctrl_ID_mem_wr_en = 1'b0;
 
 always_ff@(posedge i_clk) begin
@@ -134,15 +136,17 @@ always_ff@(posedge i_clk) begin
         ctrl_ID_reg_wr_en <= 1'b0;
         ctrl_ID_alu_src_sel <= 1'b0;
         ctrl_ID_alu_op <= 4'b0;
-        ctrl_ID_PC_sel <= 1'b0;
+        ctrl_ID_jump <= 1'b0;
+        ctrl_ID_branch <= 1'b0;
         ctrl_ID_mem_wr_en <= 1'b0;
     end else begin
         ctrl_ID_wb_result_sel <= i_ctrl_wb_result_sel;
         ctrl_ID_reg_wr_en <= i_ctrl_reg_file_wr_en;
         ctrl_ID_alu_src_sel <= i_ctrl_alu_src_sel;
         ctrl_ID_alu_op <= i_ctrl_alu_op;
-        ctrl_ID_PC_sel <= i_ctrl_PC_sel;
         ctrl_ID_mem_wr_en <= i_mem_wr_en;
+        ctrl_ID_jump <= i_ctrl_jump;
+        ctrl_ID_branch <= i_ctrl_branch;
     end
 end
 
@@ -151,6 +155,7 @@ end
 logic [DATA_WIDTH-1:0]              IE_IM_alu_result;
 logic [DATA_WIDTH-1:0]              IE_IM_data_write;
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_IF_PC_target;
+logic                               IE_alu_zero_flag;
 
 
 I_Execute #(
@@ -169,7 +174,7 @@ I_Execute #(
     .o_IE_result(IE_IM_alu_result),
     .o_IE_data_write(IE_IM_data_write),
     .o_IE_PC_target(IE_IF_PC_target),
-    .o_IE_zero_flag()
+    .o_IE_zero_flag(IE_alu_zero_flag)
 );
 
 // --------------------------------------------------------
@@ -193,6 +198,11 @@ always_ff @(posedge i_clk) begin
         IE_program_cntr_next <= ID_program_cntr_next;
     end
 end
+
+// Branch & Jump Logic 
+logic           ctrl_IE_PC_sel;
+
+assign ctrl_IE_PC_sel = (ctrl_ID_jump | (ctrl_ID_branch & IE_alu_zero_flag));
 
 // Control Unit Signal Pipelining Logic
 

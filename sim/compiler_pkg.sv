@@ -213,8 +213,34 @@ function logic [31:0] encode_stype(
 endfunction : encode_stype
 
 /* SW (Store Word) Instruction */
-function logic [31:0] sw(int rs1, int rs2, int imm);
+function logic [31:0] sw(int rs2, int rs1, int imm);
     return encode_stype(rs1, rs2, imm);
 endfunction : sw
+
+/* ------------------------- B-Type Instructions Functions --------------------------- */
+
+function logic [31:0] encode_btype(
+    int rs1, 
+    int rs2,
+    int imm
+);
+
+    logic [6:0] imm_high;
+    logic [4:0] imm_low;
+    logic [4:0] rs1_reg;
+    logic [4:0] rs2_reg;
+
+    imm_high = {imm[12], imm[10:5]};
+    imm_low = {imm[4:1], imm[11]};
+    rs1_reg = rs1;
+    rs2_reg = rs2;
+
+    return {imm_high, rs2_reg, rs1_reg, 3'b000, imm_low, OP_BRANCH};
+
+endfunction : encode_btype
+
+function logic [31:0] beq(int rs1, int rs2, int imm);
+    return encode_btype(rs1, rs2, imm);
+endfunction : beq
 
 endpackage : compiler_pkg

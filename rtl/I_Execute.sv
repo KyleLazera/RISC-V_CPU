@@ -22,13 +22,13 @@ module I_Execute #(
     input logic [DATA_WIDTH-1:0]        i_ID_read_data_1,
     input logic [DATA_WIDTH-1:0]        i_ID_read_data_2,
 
-    input logic [REG_FILE_ADDR-1:0]     i_ID_program_ctr,
+    input logic [INSTR_MEM_ADDR-1:0]     i_ID_program_ctr,
     input logic [DATA_WIDTH-1:0]        i_ID_immediate,
 
     // Output Signals
     output logic [DATA_WIDTH-1:0]       o_IE_result,            // Output of ALU (Can be either an address or data)
     output logic [DATA_WIDTH-1:0]       o_IE_data_write,        // Data that would be used in the memory write stage
-    output logic [REG_FILE_ADDR-1:0]    o_IE_PC_target,         // PC target (for jump style instruction)
+    output logic [INSTR_MEM_ADDR-1:0]   o_IE_PC_target,         // PC target (for jump style instruction)
     output logic                        o_IE_zero_flag          // Zero flag from ALU
 );
 
@@ -85,7 +85,5 @@ end
 assign o_IE_result = IE_alu_result;
 assign o_IE_data_write = IE_rd_data_2;
 assign o_IE_PC_target = i_ID_program_ctr + i_ID_immediate;
-
-// TODO: Add Zero Flag logic
 
 endmodule

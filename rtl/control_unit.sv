@@ -1,4 +1,4 @@
-
+//TODO: Support more branch operations
 
 module control_unit #(
     parameter DATA_WIDTH = 32,
@@ -23,7 +23,8 @@ module control_unit #(
     output logic [3:0]              o_alu_op,               // ALU operation select signal
     output logic                    o_reg_file_wr_en,       // Enables writing back to the register file
     output logic [1:0]              o_wb_result_sel,        // Selects the source of the data to write back to the register file
-    output logic                    o_pc_src_sel,           // Selects the source for the program counter (next sequential vs branch/jump target)
+    output logic                    o_jalr,                 // Indicates a JALR instruction op-code
+    output logic                    o_branch,               // Indicates a B-Type Instruction
     output logic                    o_mem_wr_en             // Enables writing to data memory
 );
 
@@ -89,6 +90,8 @@ assign src_sel = (i_op_code == MEM_STORE | i_op_code == MEM_LOAD | i_op_code == 
 always_comb begin
     if (i_op_code == MEM_LOAD | i_op_code == MEM_STORE)
         alu_op = 4'b0000;   // Default to addition
+    else if (i_op_code == BRANCH)
+        alu_op = 4'b0001;   // For Branch default to subtract 
     else begin
         case(i_funct3)
             4'b0000: begin
@@ -116,10 +119,12 @@ end
 
 /* ---------------- Program Counter Select Logic  ---------------- */
 
-logic   pc_src_sel;
+logic   jump_instr;
+logic   branch_instr;
 
 //This logic is used for branching to a different program counter value
-assign pc_src_sel = (i_op_code == JALR);
+assign jump_instr = (i_op_code == JALR);
+assign branch_instr = (i_op_code == BRANCH);
 
 /* ---------------- Memory Write Logic  ---------------- */
 
@@ -154,7 +159,8 @@ assign o_alu_src_sel = src_sel;
 assign o_alu_op = alu_op;   
 assign o_reg_file_wr_en = reg_file_wr_en;
 assign o_wb_result_sel = wb_result_sel; 
-assign o_pc_src_sel = pc_src_sel;
+assign o_jalr = jump_instr;
+assign o_branch = branch_instr;
 assign o_mem_wr_en = mem_wr_en;
 
 endmodule
