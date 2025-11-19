@@ -1,6 +1,4 @@
-//TODO: Need to deal with passing pipelined PC value for JAL instructions
 //TODO: Replace Data memory with interface to on-board DDR3 memory controller
-//TODO: PC Targte from Instruction execute phase is used before declaration
 
 module data_path #(
     parameter DATA_WIDTH = 32,
@@ -8,7 +6,14 @@ module data_path #(
     /* Decoding Parameters */
     parameter OP_CODE_WIDTH = 7,
     parameter FUNCT3_WIDTH = 3,
-    parameter FUNCT7_WIDTH = 7    
+    parameter FUNCT7_WIDTH = 7,
+
+    /* Memory Parameters */
+    parameter MEM_DEPTH = 256,
+    parameter INSTR_MEM_DEPTH = 256,
+
+    /* Simulation Parameters */
+    parameter SIMULATION = 1    
 ) (
     input logic         i_clk,
     input logic         i_reset_n,
@@ -26,15 +31,15 @@ module data_path #(
     input logic [1:0]                i_ctrl_wb_result_sel,      // Determine the Source for the Write Back 
     input logic                      i_ctrl_jump,
     input logic                      i_ctrl_branch,
-    input logic                      i_mem_wr_en  
+    input logic                      i_mem_wr_en,  
 
-    // Hazard Signals 
+    // Simulation Outputs
+    output logic                    o_instr_commit
 );
 
 /* Local Parameters */
 
 localparam  INSTR_MEM_WIDTH = DATA_WIDTH;
-localparam  INSTR_MEM_DEPTH = 256;
 localparam  INSTR_MEM_ADDR_WIDTH = $clog2(INSTR_MEM_DEPTH);
 
 localparam REG_FILE_ADDR = $clog2(DATA_WIDTH);
@@ -57,6 +62,20 @@ I_Fetch #(
     .o_IF_program_cntr(IF_ID_program_ctr),
     .o_IF_program_cntr_next(IF_ID_program_ctr_next)
 );
+
+logic       IF_instr_commit = 1'b0;
+
+generate 
+    if(SIMULATION) begin 
+        always_ff @(posedge i_clk) begin
+            if(!i_reset_n) begin
+                IF_instr_commit <= 1'b0;
+            end else begin
+                IF_instr_commit <= 1'b1;
+            end
+        end
+    end
+endgenerate
 
 /* ---------------- Instruction Decode  ---------------- */
 
@@ -150,6 +169,20 @@ always_ff@(posedge i_clk) begin
     end
 end
 
+logic       ID_instr_commit = 1'b0;
+
+generate 
+    if(SIMULATION) begin 
+        always_ff @(posedge i_clk) begin
+            if(!i_reset_n) begin
+                ID_instr_commit <= 1'b0;
+            end else begin
+                ID_instr_commit <= IF_instr_commit;
+            end
+        end
+    end
+endgenerate
+
 /* ---------------- Instruction Execute  ---------------- */
 
 logic [DATA_WIDTH-1:0]              IE_IM_alu_result;
@@ -216,6 +249,20 @@ always_ff@(posedge i_clk) begin
     ctrl_IE_mem_wr_en <= ctrl_ID_mem_wr_en;
 end
 
+logic       IE_instr_commit = 1'b0;
+
+generate 
+    if(SIMULATION) begin 
+        always_ff @(posedge i_clk) begin
+            if(!i_reset_n) begin
+                IE_instr_commit <= 1'b0;
+            end else begin
+                IE_instr_commit <= ID_instr_commit;
+            end
+        end
+    end
+endgenerate
+
 /* ---------------- Memory Read/Write  ---------------- */
 
 logic [DATA_WIDTH-1:0]      IM_mem_addr;
@@ -228,7 +275,7 @@ assign IM_mem_wr_data = IE_IM_data_write;
 // Memory Instantiation
 data_mem #(
     .DATA_WIDTH(DATA_WIDTH),
-    .MEM_DEPTH(32)
+    .MEM_DEPTH(MEM_DEPTH)
 ) mem (
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
@@ -269,6 +316,20 @@ always_ff@(posedge i_clk) begin
     ctrl_IM_reg_wr_en <= ctrl_IE_reg_wr_en;
 end
 
+logic       IM_instr_commit = 1'b0;
+
+generate 
+    if(SIMULATION) begin 
+        always_ff @(posedge i_clk) begin
+            if(!i_reset_n) begin
+                IM_instr_commit <= 1'b0;
+            end else begin
+                IM_instr_commit <= IE_instr_commit;
+            end
+        end
+    end
+endgenerate
+
 /* ---------------- Memory Write-Back  ---------------- */
 
 logic [DATA_WIDTH-1:0]    WB_result;
@@ -285,6 +346,27 @@ always_comb begin
     endcase
 end
 
+/* ---------------- Simulation Related Signals  ---------------- */
 
+logic       instr_commit_pipe[4:0];
+
+generate 
+    if(SIMULATION) begin 
+        always_ff @(posedge i_clk) begin
+            if(!i_reset_n) begin
+                for(int i = 0; i < 5; i++)
+                    instr_commit_pipe[i] <= 1'b0;
+            end else begin
+                instr_commit_pipe[0] <= 1'b1;
+                instr_commit_pipe[1] <= instr_commit_pipe[0];
+                instr_commit_pipe[2] <= instr_commit_pipe[1];
+                instr_commit_pipe[3] <= instr_commit_pipe[2];
+                instr_commit_pipe[4] <= instr_commit_pipe[3];
+            end
+        end
+    end
+endgenerate
+
+assign o_instr_commit = instr_commit_pipe[4] ;
 
 endmodule 

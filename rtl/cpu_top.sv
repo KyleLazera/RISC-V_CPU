@@ -1,8 +1,14 @@
 module cpu_top #(
-    parameter DATA_WIDTH = 32
+    parameter DATA_WIDTH = 32,
+    parameter MEM_DEPTH = 256,
+    parameter INSTR_MEM_DEPTH = 256,
+    parameter SIMULATION = 0
 ) (
     input logic         i_clk,
-    input logic         i_reset_n
+    input logic         i_reset_n,
+
+    // NOTE: Only used in simulation
+    output logic        o_instr_commit
 );
 
 /* ---------------- Local Parameters  ---------------- */
@@ -57,8 +63,11 @@ control_unit #(
 data_path #(
     .DATA_WIDTH(DATA_WIDTH),
     .OP_CODE_WIDTH(OP_CODE_WIDTH),
+    .MEM_DEPTH(MEM_DEPTH),
+    .INSTR_MEM_DEPTH(INSTR_MEM_DEPTH),
     .FUNCT3_WIDTH(FUNCT3_WIDTH),
-    .FUNCT7_WIDTH(FUNCT7_WIDTH)
+    .FUNCT7_WIDTH(FUNCT7_WIDTH),
+    .SIMULATION(SIMULATION)
 ) data_path_inst (
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
@@ -77,7 +86,10 @@ data_path #(
     .i_ctrl_wb_result_sel(wb_result_sel),
     .i_ctrl_jump(jump_instr),
     .i_ctrl_branch(branch_instr),
-    .i_mem_wr_en(mem_wr_en)   
+    .i_mem_wr_en(mem_wr_en)   ,
+
+    // Simulation Wires
+    .o_instr_commit(o_instr_commit)
 );
 
 
