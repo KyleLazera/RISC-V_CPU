@@ -358,7 +358,7 @@ generate
                     instr_commit_pipe[i] <= 1'b0;
             end else begin
                 instr_commit_pipe[0] <= 1'b1;
-                instr_commit_pipe[1] <= instr_commit_pipe[0];
+                instr_commit_pipe[1] <= (o_op_code == 7'b1100111 | o_op_code == 7'b1100011) ? 1'b0 : instr_commit_pipe[0];
                 instr_commit_pipe[2] <= instr_commit_pipe[1];
                 instr_commit_pipe[3] <= instr_commit_pipe[2];
                 instr_commit_pipe[4] <= instr_commit_pipe[3];

@@ -61,6 +61,7 @@ always_ff @(posedge clk) begin
     if(instr_complete) begin
         cpu_model.step();
         cpu_model.validate_reg_file(cpu_top_inst.data_path_inst.instruction_decode.regfile.reg_file);
+        cpu_model.validate_memory(cpu_top_inst.data_path_inst.mem.mem);
     end
 end
 

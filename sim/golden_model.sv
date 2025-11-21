@@ -6,7 +6,7 @@ class golden_model#(
 
     localparam PC_WIDTH = $clog2(INSTR_MEM_DEPTH);
 
-    typedef enum {
+    typedef enum logic [6:0] {
         R_TYPE = 7'b0110011,
         I_TYPE = 7'b0010011,
         S_TYPE = 7'b0100011,
@@ -29,9 +29,14 @@ class golden_model#(
             instr_memory[i] = instructions[i];
         end
 
+        // Load initial state of data memory
+        for(int i = 0; i < MEMORY_DEPTH; i++) begin
+            data_memory[i] = 32'b0;
+        end
+
+        // Load initial state of register file
         for(int i = 0; i < DATA_WIDTH; i++) begin
             register_file[i] = i;
-            $display("Ref File[%0d]: %0h", i, register_file[i]);
         end
     endfunction : new
 
@@ -65,8 +70,6 @@ class golden_model#(
 
         // Default next PC
         next_pc = program_cntr + 4;
-
-        $display("Op Code: %0b", opcode);
 
         case (opcode)
 
@@ -128,7 +131,7 @@ class golden_model#(
             // STORE (SW)
             // ---------------------------------------------------
             S_TYPE: begin
-                data_memory[(register_file[rs1] + imm_s) >> 2] = register_file[rs2]; // aligned store
+                data_memory[(register_file[rs1] + imm_s)] = register_file[rs2]; 
             end
 
 
@@ -168,7 +171,7 @@ class golden_model#(
     // Validate the reg file and its current state by comparing the DUT
     // reg file to the golden model reg file.
     // ----------------------------------------------------------------
-    function void validate_reg_file(logic [DATA_WIDTH-1:0]  dut_reg_file [DATA_WIDTH]);
+    function void validate_reg_file(logic [DATA_WIDTH-1:0] dut_reg_file [DATA_WIDTH]);
 
         foreach(dut_reg_file[i]) begin
             assert(register_file[i] == dut_reg_file[i]) begin
@@ -179,5 +182,21 @@ class golden_model#(
             end
         end
     endfunction : validate_reg_file
+
+    // ----------------------------------------------------------------
+    // Validate the datae memory and its current state by comparing the DUT
+    // memory to the golden model reg file.
+    // ----------------------------------------------------------------
+    function void validate_memory(logic [DATA_WIDTH-1:0] dut_memory [MEMORY_DEPTH]);
+
+        foreach(data_memory[i]) begin
+            assert(data_memory[i] == dut_memory[i]) begin
+                //$display("MATCH: Model reg[%0d]: %0h == Actual reg[%0d]: %0h", i, register_file[i], i, dut_reg_file[i]);
+            end else begin
+                $display("[%t] MISMATCH: Model Mem[%0d]: %0h != Actual Mem[%0d]: %0h", $time, i, data_memory[i], i, dut_memory[i]);
+                $stop;
+            end
+        end
+    endfunction : validate_memory
 
 endclass : golden_model

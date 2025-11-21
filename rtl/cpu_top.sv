@@ -86,7 +86,7 @@ data_path #(
     .i_ctrl_wb_result_sel(wb_result_sel),
     .i_ctrl_jump(jump_instr),
     .i_ctrl_branch(branch_instr),
-    .i_mem_wr_en(mem_wr_en)   ,
+    .i_mem_wr_en(mem_wr_en),
 
     // Simulation Wires
     .o_instr_commit(o_instr_commit)

@@ -12,7 +12,7 @@
 
 module data_mem #(
     parameter DATA_WIDTH = 32,
-    parameter MEM_DEPTH = 2**32,
+    parameter MEM_DEPTH = 32,
 
     /* Do Not Modify */
     parameter ADDR_WIDTH = $clog2(MEM_DEPTH)
@@ -30,7 +30,7 @@ module data_mem #(
 );
 
 // Memory block instantiation
-logic [DATA_WIDTH-1:0] mem [MEM_DEPTH-1:0];
+logic [DATA_WIDTH-1:0] mem [MEM_DEPTH];
 
 always_ff @(posedge i_clk) begin
     if (!i_reset_n) begin
