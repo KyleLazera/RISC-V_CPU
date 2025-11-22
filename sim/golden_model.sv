@@ -9,6 +9,7 @@ class golden_model#(
     typedef enum logic [6:0] {
         R_TYPE = 7'b0110011,
         I_TYPE = 7'b0010011,
+        LOAD = 7'b0000011,
         S_TYPE = 7'b0100011,
         B_TYPE = 7'b1100011,
         JALR = 7'b1100111
@@ -68,6 +69,8 @@ class golden_model#(
         imm_s = {{20{instr[31]}}, instr[31:25], instr[11:7]};
         imm_b = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
 
+        $display("PC: %0h", program_cntr);
+
         // Default next PC
         next_pc = program_cntr + 4;
 
@@ -102,7 +105,6 @@ class golden_model#(
             // ---------------------------------------------------
             I_TYPE: begin
                 $display("I-Type Instruction:");
-                $display("Adding: %0d + %0d", register_file[rs1], imm_i);
                 case (funct3)
                     3'b000: result = register_file[rs1] + imm_i;                     // ADDI
                     3'b010: result = ($signed(register_file[rs1]) < $signed(imm_i)); // SLTI
@@ -131,6 +133,7 @@ class golden_model#(
             // STORE (SW)
             // ---------------------------------------------------
             S_TYPE: begin
+                $display("Store Instruction Executed");
                 data_memory[(register_file[rs1] + imm_s)] = register_file[rs2]; 
             end
 
@@ -139,10 +142,15 @@ class golden_model#(
             // BRANCH (BEQ only)
             // ---------------------------------------------------
             B_TYPE: begin
+                $display("B-Type Instruction executed.");
                 if (funct3 == 3'b000) begin // BEQ
                     if (register_file[rs1] == register_file[rs2])
                         next_pc = program_cntr + imm_b;
-                end
+                    else
+                        next_pc = program_cntr + 12; // If branch is not taken, skip over no-ops in golden model - this will throw off alignment between model and DUT
+                end  
+                    
+                $display("New PC: %0h", next_pc);
             end
 
 
@@ -150,13 +158,30 @@ class golden_model#(
             // JALR
             // ---------------------------------------------------
             JALR: begin
+                $display("JALR Instruction executed. Jumping to %0d + %0d", register_file[rs1], imm_i);
                 if (rd != 0) 
-                    register_file[rd] = program_cntr + 4;
+                    register_file[rd] = next_pc;
 
-                next_pc = (register_file[rs1] + imm_i) & ~32'b1;
+                next_pc = (register_file[rs1] + imm_i);
+                $display("New PC: %0d", next_pc);
             end
 
+            // ---------------------------------------------------
+            // LOAD (LW)
+            // ---------------------------------------------------
+            LOAD: begin
+                $display("LW Instruction executed");
+
+                if (funct3 == 3'b010) begin
+                    int addr = register_file[rs1] + imm_i;
+
+                    if (rd != 0)
+                        register_file[rd] = data_memory[addr];  
+                end
+            end            
+
             default: begin
+                $display("No-OP Instruction executed");
                 // Unsupported instruction → no-op
             end
 

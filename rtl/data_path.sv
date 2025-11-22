@@ -199,6 +199,7 @@ I_Execute #(
     .i_clk(i_clk),
     .i_reset_n(i_reset_n),
     .i_ctrl_alu_src_sel(ctrl_ID_alu_src_sel),
+    .i_ctrl_jalr(ctrl_ID_jump),
     .i_ctrl_alu_op_sel(ctrl_ID_alu_op),
     .i_ID_read_data_1(ID_IE_rd_data_1),
     .i_ID_read_data_2(ID_IE_rd_data_2),
@@ -341,7 +342,7 @@ always_comb begin
     case(ctrl_IM_wb_result_sel)
         2'b00: WB_result = IM_read_data;            // Load from the data memory
         2'b01: WB_result = IM_WB_alu_result;        // Output from the ALU 
-        2'b10: WB_result = IE_program_cntr_next;    // Next PC for JAL instructions
+        2'b10: WB_result = IM_program_cntr_next;    // Next PC for JAL instructions
         default: WB_result = {DATA_WIDTH{1'b0}};
     endcase
 end
@@ -357,7 +358,8 @@ generate
                 for(int i = 0; i < 5; i++)
                     instr_commit_pipe[i] <= 1'b0;
             end else begin
-                instr_commit_pipe[0] <= 1'b1;
+                instr_commit_pipe[0] <= !(o_op_code == 7'b1100111 | o_op_code == 7'b1100011);
+                // For branch & jump operations we need to lower the commit for 1 cycle 
                 instr_commit_pipe[1] <= (o_op_code == 7'b1100111 | o_op_code == 7'b1100011) ? 1'b0 : instr_commit_pipe[0];
                 instr_commit_pipe[2] <= instr_commit_pipe[1];
                 instr_commit_pipe[3] <= instr_commit_pipe[2];
@@ -367,6 +369,6 @@ generate
     end
 endgenerate
 
-assign o_instr_commit = instr_commit_pipe[4] ;
+assign o_instr_commit = instr_commit_pipe[3];
 
 endmodule 

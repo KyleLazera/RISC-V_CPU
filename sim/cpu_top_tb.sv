@@ -6,7 +6,7 @@ module cpu_top_tb;
 import compiler_pkg::*;
 
 localparam DATA_WIDTH = 32;
-localparam MEM_DEPTH = 32;
+localparam MEM_DEPTH = 256;
 localparam INSTR_MEM_DEPTH = 256;
 
 logic clk;
@@ -36,28 +36,80 @@ initial begin
     forever #5 clk = ~clk; // 10MHz Clock
 end
 
-// Load Instructions into the DUT instruction memory
+/* This contains a simple test sequence that mimics the following simple C program:
+
+int compute_sum(int n) {
+    int i = 0;
+    int sum = 0;
+    while (i < n) {
+        sum += i;
+        i++;
+    }
+    return sum;
+}
+
+int main() {
+    int n = 5;
+    int result = compute_sum(n);
+    memory[200] = result;
+}
+
+This utilizes majority of teh base instruction set including R-type, I-type, S-type instructions*/
+
 initial begin
-    /* Instruction Tests */
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = addi(1, 1, 1);         //addi x1, x1, 1 -> *Reg[1] = *reg[1] + 1 -> Should be 1
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = 32'b0; 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = 32'b0; 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = beq(1, 2, 60);         //beq x1, x2, 0x15 -> If (*reg[1] == *reg[2]) branch to PC + 0x15 (branch to 0x64)
 
-    // Add 2 No-op instructions to allow for branch to be taken
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = 32'b0;                 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = 32'b0;          
+    // Init variable n = 5
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[0] = addi(10, 0, 5);        // addi x10, x0, 5      
 
-    // Branched instructions
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[72] = sw(20, 30, -10);       // SW x20, -10(reg[30]) -> Store 20 in address (30-10 = 20)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[76] = sw(10, 20, -4);        // SW x10, -4(reg[20])  -> Store 10 in address (20-4 = 16)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[80] = sw(8, 12, 0);          // SW x8, 0(reg[12])    -> Store 8 in address (12 + 0 = 12)
+    // Save/store architectural state for function call
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = addi(4, 30, 30);       // addi x4, x30, 30     (Store value 60 in x4)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = 32'b0;                 // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = 32'b0;                 // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = sw(10, 4, 0);          // sw x10, 0(x4)       (Store contents of x10 to memory[60])
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = sw(1, 4, 4);           // sw x1, 4(x4)        (Store contents of x1 to memory[64])
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = sw(2, 4, 8);           // sw x2, 8(x4)        (Store contents of x2 to mem[68])
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[28] = jalr(6, 30, 50);       // Jump to function call & store current address in x6
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[32] = 32'b0;                 // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[36] = 32'b0;                 // NOP     
+
+    // Restore architectural state after function call
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[40] = lw(1, 4, 0);           // lw x1, 0(x4)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[44] = lw(2, 4, 4);           // lw x2, 4(x4)
+    
+    // Save return value to Memory
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[48] = sw(11, 4, 0);         // Store return value to mem[200] 
+
+    // Function compute_sum
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[80] = addi(1, 0, 0);        // addi x1, x0, 0  (Init i = 0)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[84] = addi(2, 0, 0);        // addi x2, x0, 0  (init sum = 0)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[88] = slt(3, 1, 10);        // slt x3, x1, x10  (x3 = (i < n))
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[92] = 32'b0;                // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[96] = 32'b0;               // NOP     
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[100] = beq(3, 0, 44);        // Jump out of while loop
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[104] = 32'b0;                // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[108] = 32'b0;               // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[112] = add(2, 2, 1);        // add x2, x2, x1  (sum += i)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[116] = addi(1, 1, 1);       // addi x1, x1, 1  (i++)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[120] = addi(5, 30, 58);     // Store address of the while loop beginning
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[124] = 32'b0;
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[128] = 32'b0;
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[132] = jalr(0, 5, 0);       // Jump back to loop
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[136] = 32'b0;
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[140] = 32'b0;
+
+    // Return value and jump back to main
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[144] = addi(11, 2, 0);      // Store return value in x11
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[148] = jalr(0, 6, 8);       // Return back to main 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[152] = 32'b0;
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[156] = 32'b0;
+
 
     // Load instructions into the Golden model
     cpu_model = new(cpu_top_inst.data_path_inst.instruction_fetch.instr_mem);
 end
 
-always_ff @(posedge clk) begin
+// Use negedge to ensure the RTL blocking signals have been driven
+always @(posedge clk) begin 
     if(instr_complete) begin
         cpu_model.step();
         cpu_model.validate_reg_file(cpu_top_inst.data_path_inst.instruction_decode.regfile.reg_file);
@@ -73,8 +125,10 @@ initial begin
     reset_n <= 1'b1; 
     @(posedge clk);
 
-    // Simulation run time only used for initial testing to prevent infinite running
-    #1000;
+    // Run the simulation for a fixed amount of time
+    repeat(500)
+        @(posedge clk);
+
     $finish;
 end
 

@@ -146,7 +146,8 @@ logic [1:0] wb_result_sel;
 // to write to a desintation register.
 //--------------------------------------------------------
 
-assign reg_file_wr_en = (i_op_code == R_TYPE | i_op_code == INT_IMMEDIATE | i_op_code == MEM_LOAD); //TODO: Complete this logic to include all instructions that write back to the register file
+assign reg_file_wr_en = (i_op_code == R_TYPE | i_op_code == INT_IMMEDIATE | i_op_code == MEM_LOAD | i_op_code == JALR); //TODO: Complete this logic to include all instructions that write back to the register file
+
 assign wb_result_sel = (i_op_code == MEM_LOAD) ? 2'b00 :                // Load from memory
                        (i_op_code == JAL | i_op_code == JALR) ? 2'b10 : // Next PC for JAL/JALR
                     2'b01;                                           // Default to ALU result

@@ -16,6 +16,7 @@ module I_Execute #(
                                                                 //  2. Immediate value for jumps/stores/loads etc.
                                                                 // i_ctrl_alu_src_sel acts as a select signal
     input logic [3:0]                   i_ctrl_alu_op_sel,      // Select which operation the ALU should perform
+    input logic                         i_ctrl_jalr,            // Indicates we have a JALR (Add immediate to rs1 for PC target)
     output logic                        o_ctrl_zero_flag,
 
     // Input Signals 
@@ -84,6 +85,6 @@ end
 
 assign o_IE_result = IE_alu_result;
 assign o_IE_data_write = IE_rd_data_2;
-assign o_IE_PC_target = i_ID_program_ctr + i_ID_immediate;
+assign o_IE_PC_target = (i_ctrl_jalr) ? (i_ID_read_data_1 + i_ID_immediate) : (i_ID_program_ctr + i_ID_immediate);
 
 endmodule
