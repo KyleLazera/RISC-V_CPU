@@ -23,7 +23,7 @@ module I_Execute #(
     input logic [DATA_WIDTH-1:0]        i_ID_read_data_1,
     input logic [DATA_WIDTH-1:0]        i_ID_read_data_2,
 
-    input logic [INSTR_MEM_ADDR-1:0]     i_ID_program_ctr,
+    input logic [INSTR_MEM_ADDR-1:0]    i_ID_program_ctr,
     input logic [DATA_WIDTH-1:0]        i_ID_immediate,
 
     // Output Signals

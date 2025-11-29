@@ -63,8 +63,8 @@ initial begin
 
     // Save/store architectural state for function call
     cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[4] = addi(4, 30, 30);       // addi x4, x30, 30     (Store value 60 in x4)
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = 32'b0;                 // NOP 
-    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = 32'b0;                 // NOP 
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[8] = add(5, 4, 3);           // add x5, x4, x3      (Store output of 60 + 3 in x5)
+    cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[12] = sll(20, 5, 1);         // sll x20, x4, x1     (Store x5 << 1 (x5*2) in x20)
     cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[16] = sw(10, 4, 0);          // sw x10, 0(x4)       (Store contents of x10 to memory[60])
     cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[20] = sw(1, 4, 4);           // sw x1, 4(x4)        (Store contents of x1 to memory[64])
     cpu_top_inst.data_path_inst.instruction_fetch.instr_mem[24] = sw(2, 4, 8);           // sw x2, 8(x4)        (Store contents of x2 to mem[68])
@@ -129,6 +129,8 @@ initial begin
     repeat(500)
         @(posedge clk);
 
+
+    $display("Execution Complete!");
     $finish;
 end
 

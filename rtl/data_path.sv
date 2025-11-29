@@ -33,7 +33,18 @@ module data_path #(
     input logic                      i_ctrl_branch,
     input logic                      i_mem_wr_en,  
 
-    // Simulation Outputs
+    /* Hazard Unit Interface */
+    output logic [4:0]               o_IE_src_reg_1,
+    output logic [4:0]               o_IE_src_reg_2,
+    output logic [4:0]               o_IM_dst_reg,
+    output logic [4:0]               o_WB_dst_reg,
+    output logic                     o_ctrl_WB_reg_wr_en,
+    output logic                     o_ctrl_IM_reg_wr_en,
+
+    input logic                      i_IM_forward,
+    input logic                      i_WB_forward,
+
+    /* Simulation Signals (ONLY IS SIMULATION = 1) */
     output logic                    o_instr_commit
 );
 
@@ -121,18 +132,28 @@ assign o_funct7 = instr_funct7;
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    ID_program_cntr = {INSTR_MEM_ADDR_WIDTH{1'b0}};
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    ID_program_cntr_next = {INSTR_MEM_ADDR_WIDTH{1'b0}};
 logic [REG_FILE_ADDR-1:0]           ID_dst_reg = {REG_FILE_ADDR{1'b0}};
+logic [REG_FILE_ADDR-1:0]           ID_src_reg_1 = {REG_FILE_ADDR{1'b0}};
+logic [REG_FILE_ADDR-1:0]           ID_src_reg_2 = {REG_FILE_ADDR{1'b0}};
 
 always_ff @(posedge i_clk) begin
     if (!i_reset_n) begin
         ID_program_cntr <= {INSTR_MEM_ADDR_WIDTH{1'b0}};
         ID_program_cntr_next <= {INSTR_MEM_ADDR_WIDTH{1'b0}};
         ID_dst_reg <= {REG_FILE_ADDR{1'b0}};
+        ID_src_reg_1 <= {REG_FILE_ADDR{1'b0}};
+        ID_src_reg_2 <= {REG_FILE_ADDR{1'b0}};
     end else begin
         ID_program_cntr <= IF_ID_program_ctr;
         ID_program_cntr_next <= IF_ID_program_ctr_next;
         ID_dst_reg <= IF_ID_instruction[11:7];
+        ID_src_reg_1 <= IF_ID_instruction[19:15];
+        ID_src_reg_2 <= IF_ID_instruction[24:20];
     end  
 end
+
+// Hazard Signals 
+assign o_IE_src_reg_1 = ID_src_reg_1;
+assign o_IE_src_reg_2 = ID_src_reg_2;
 
 // -------------------------------------------------------
 // The Control signals are generated combinationally by the
@@ -187,9 +208,16 @@ endgenerate
 
 logic [DATA_WIDTH-1:0]              IE_IM_alu_result;
 logic [DATA_WIDTH-1:0]              IE_IM_data_write;
+logic [DATA_WIDTH-1:0]              IE_src_1;
+logic [DATA_WIDTH-1:0]              IE_src_2;
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_IF_PC_target;
 logic                               IE_alu_zero_flag;
 
+// If the forward signal is set from hazard unit, we need to forward the 
+// data from the Memory stage (next pipeline stage) instead of using the 
+// data from the register file.
+assign IE_src_1 = (i_IM_forward) ? IE_IM_alu_result : ID_IE_rd_data_1;
+assign IE_src_2 = (i_WB_forward) ? WB_result : ID_IE_rd_data_2;
 
 I_Execute #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -201,8 +229,8 @@ I_Execute #(
     .i_ctrl_alu_src_sel(ctrl_ID_alu_src_sel),
     .i_ctrl_jalr(ctrl_ID_jump),
     .i_ctrl_alu_op_sel(ctrl_ID_alu_op),
-    .i_ID_read_data_1(ID_IE_rd_data_1),
-    .i_ID_read_data_2(ID_IE_rd_data_2),
+    .i_ID_read_data_1(IE_src_1), 
+    .i_ID_read_data_2(IE_src_2), //ID_IE_rd_data_2
     .i_ID_program_ctr(ID_program_cntr),
     .i_ID_immediate(ID_IE_immediate),
     .o_IE_result(IE_IM_alu_result),
@@ -221,14 +249,20 @@ I_Execute #(
 // --------------------------------------------------------
 
 logic [REG_FILE_ADDR-1:0]           IE_dst_reg = {REG_FILE_ADDR{1'b0}};
+logic [REG_FILE_ADDR-1:0]           IE_src_reg_1 = {REG_FILE_ADDR{1'b0}};
+logic [REG_FILE_ADDR-1:0]           IE_src_reg_2 = {REG_FILE_ADDR{1'b0}};
 logic [INSTR_MEM_ADDR_WIDTH-1:0]    IE_program_cntr_next = {INSTR_MEM_ADDR_WIDTH{1'b0}};
 
 always_ff @(posedge i_clk) begin
     if (!i_reset_n) begin
         IE_dst_reg <= {REG_FILE_ADDR{1'b0}};
+        IE_src_reg_1 <= {REG_FILE_ADDR{1'b0}};
+        IE_src_reg_2 <= {REG_FILE_ADDR{1'b0}};
         IE_program_cntr_next <= {INSTR_MEM_ADDR_WIDTH{1'b0}};
     end else begin
         IE_dst_reg <= ID_dst_reg;
+        IE_src_reg_1 <= ID_src_reg_1;
+        IE_src_reg_2 <= ID_src_reg_2;
         IE_program_cntr_next <= ID_program_cntr_next;
     end
 end
@@ -249,6 +283,11 @@ always_ff@(posedge i_clk) begin
     ctrl_IE_reg_wr_en <= ctrl_ID_reg_wr_en;
     ctrl_IE_mem_wr_en <= ctrl_ID_mem_wr_en;
 end
+
+// Hazard Signals (Memory Stage)
+
+assign o_IM_dst_reg = IE_dst_reg;
+assign o_ctrl_IM_reg_wr_en = ctrl_IE_reg_wr_en;
 
 logic       IE_instr_commit = 1'b0;
 
@@ -337,6 +376,11 @@ logic [DATA_WIDTH-1:0]    WB_result;
 logic [REG_FILE_ADDR-1:0] WB_dst_reg;
 
 assign WB_dst_reg = IM_dst_reg;
+
+// Hazard Signals (WB Stage)
+
+assign o_WB_dst_reg = WB_dst_reg;
+assign o_ctrl_WB_reg_wr_en = ctrl_IM_reg_wr_en;
 
 always_comb begin
     case(ctrl_IM_wb_result_sel)

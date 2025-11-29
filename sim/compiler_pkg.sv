@@ -72,7 +72,7 @@ function logic [31:0] xor_op(int rd, int rs1, int rs2);
 endfunction
 
 // Shift Left Logical - Shift contents of src1 left by amount in src2, store shifted value in dst_reg
-function logic [31:32] sll(int rd, int rs1, int rs2);
+function logic [31:0] sll(int rd, int rs1, int rs2);
     return encode_rtype(rd, rs1, rs2, F3_SLL, F7_ADD);
 endfunction
 

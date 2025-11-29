@@ -58,6 +58,29 @@ control_unit #(
     .o_mem_wr_en(mem_wr_en)
 );
 
+/* ---------------- Hazard Unit Instantiation  ---------------- */
+
+logic [4:0]     IE_src_reg_1;
+logic [4:0]     IE_src_reg_2;
+logic [4:0]     IM_dst_reg;
+logic [4:0]     WB_dst_reg;
+logic           ctrl_IM_reg_wr_en;
+logic           ctrl_WB_reg_wr_en;
+
+logic           IM_forward;
+logic           WB_forward;
+
+hazard_unit hazard_unit_inst(
+    .i_IE_src_reg_1(IE_src_reg_1),         
+    .i_IE_src_reg_2(IE_src_reg_2),         
+    .i_IM_dst_reg(IM_dst_reg), 
+    .i_WB_dst_reg(WB_dst_reg),          
+    .i_ctrl_WB_reg_wr_en(ctrl_WB_reg_wr_en),       
+    .i_ctrl_IM_reg_wr_en(ctrl_IM_reg_wr_en),       
+    .o_IM_forward(IM_forward),            
+    .o_WB_forward(WB_forward)            
+);
+
 /* ---------------- Data Path Instantiation  ---------------- */
 
 data_path #(
@@ -88,7 +111,19 @@ data_path #(
     .i_ctrl_branch(branch_instr),
     .i_mem_wr_en(mem_wr_en),
 
-    // Simulation Wires
+    /* Hazard Unit Inputs */
+    .i_IM_forward(IM_forward),
+    .i_WB_forward(WB_forward),
+
+    /* Hazard Unit Outputs */
+    .o_IE_src_reg_1(IE_src_reg_1),
+    .o_IE_src_reg_2(IE_src_reg_2),
+    .o_IM_dst_reg(IM_dst_reg),
+    .o_WB_dst_reg(WB_dst_reg),
+    .o_ctrl_WB_reg_wr_en(ctrl_WB_reg_wr_en),
+    .o_ctrl_IM_reg_wr_en(ctrl_IM_reg_wr_en),
+
+    /* Simulation Signals (ONLY IS SIMULATION = 1) */
     .o_instr_commit(o_instr_commit)
 );
 
